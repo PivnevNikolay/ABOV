@@ -65,11 +65,19 @@ void Main(void)
   Port_SetOutputpin(PORT1, PIN1, PUSH_PULL);
   Port_SetOutputpin(PORT1, PIN2, PUSH_PULL);
   Port_SetOutputpin(PORT1, PIN3, PUSH_PULL);
+  /*------------------------------------------------
+  P1IO |= (1<<0)|(1<<1)|(1<<2)|(1<<3);
+  P1OD &= ~((1<<0)|(1<<1)|(1<<2)|(1<<3));
+  ------------------------------------------------*/
   //Port_SetOutputHighpin(PORT1, PIN0|PIN1|PIN2|PIN3);--> данная инициализация не корректна и в дальнейшем использоваться не будет!
   Port_SetOutputHighpin(PORT1, PIN0);//логическая единица на выходе P1.0 
   Port_SetOutputHighpin(PORT1, PIN1);//логическая единица на выходе P1.1
   Port_SetOutputHighpin(PORT1, PIN2);//логическая единица на выходе P1.2 
   Port_SetOutputHighpin(PORT1, PIN3);//логическая единица на выходе P1.3 
+  /*------------------------------------------------
+  P1 |= (1<<0)|(1<<1)|(1<<2)|(1<<3);
+  ------------------------------------------------*/
+  
   while(1)
   {
     for (i=0;i<4;i++){
