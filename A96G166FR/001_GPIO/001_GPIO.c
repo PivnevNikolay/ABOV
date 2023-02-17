@@ -128,3 +128,61 @@ void Main(void)
 *  В данной функции отсутствует порт 3 (выводы Р3.0 Р3.1 Р3.2 .... Р3.7 не могут быть настроены как входы!!!)
 *  Также возможны проблемы с настройкой ваводов при использовании функции библиотеки!!! 
 */
+#include "Intrins.h"
+#include "delay.h"
+#include "a96g166_gpio.h"
+#include "a96g166_clock.h"
+
+//bit condition;
+u8 condition = TRUE;
+
+void Main(void)
+{
+  // Disable INT. during peripheral setting
+  GLOBAL_INTERRUPT_DIS();       
+  // Port intialize 
+  Port_Initial();		        
+  // Clock 16Mhz initialize 
+  Clock_Initial(HSI32_DIV2);         
+  // Enable INT 
+  GLOBAL_INTERRUPT_EN(); 
+  Port_SetOutputpin(PORT1, PIN0, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN1, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN2, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN3, PUSH_PULL);
+  Port_SetOutputHighpin(PORT1, PIN0);
+  Port_SetOutputHighpin(PORT1, PIN1);
+  Port_SetOutputHighpin(PORT1, PIN2);
+  Port_SetOutputHighpin(PORT1, PIN3);
+  //Port_SetInputpin(PORT2, PIN4, NO_PULL);//P2.4
+  P2IO &= ~(1<<4);//SetInputpin
+  P2PU &= ~(1<<4);// NO_PULL
+  //Port_SetInputpin(PORT2, PIN5, NO_PULL);//P2.5
+  P2IO &= ~(1<<5);//SetInputpin
+  P2PU &= ~(1<<5);// NO_PULL
+  //Port_SetInputpin(PORT3, PIN0, NO_PULL);//P3.0
+  P3IO &= ~(1<<0);//SetInputpin
+  P3PU &= ~(1<<1);// NO_PULL
+	
+  while(1)
+  {
+  condition = Port_GetInputpinValue(PORT2, PIN4);
+   if(condition == FALSE){
+    Port_SetOutputLowpin(PORT1, PIN0);	
+     }
+    else 
+    Port_SetOutputHighpin(PORT1, PIN0);
+    condition = Port_GetInputpinValue(PORT2, PIN5);
+    if(condition == FALSE){
+    Port_SetOutputLowpin(PORT1, PIN1);	
+    }
+    else 
+    Port_SetOutputHighpin(PORT1, PIN1);
+    condition = Port_GetInputpinValue(PORT3, PIN0);
+    if(condition == FALSE){
+    Port_SetOutputLowpin(PORT1, PIN2);	
+    }
+    else 
+    Port_SetOutputHighpin(PORT1, PIN2);
+  }
+}
