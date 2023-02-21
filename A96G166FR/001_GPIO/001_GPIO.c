@@ -88,7 +88,7 @@ void Main(void)
 }
 /*---------------------------------------------------------------------------------------------------------------------------------------
 * -----------------------------------  Второй пример кнопки и светодиоды.  --------------------------------------------------------------
--------------------------------- При нажатии на одну из кнопок будет загораться один светодиод ------------------------------------------
+-------------------------------- При нажатии на одну из кнопок будет загораться один светодиод. -----------------------------------------
 *     A96G166FR
 *   ------------
 *  |            |
@@ -184,5 +184,81 @@ void Main(void)
     }
     else 
     Port_SetOutputHighpin(PORT1, PIN2);
+  }
+}
+/*---------------------------------------------------------------------------------------------------------------------------------------
+* ----------------------------------- Третий пример внешние прерывания. -----------------------------------------------------------------
+* Внешние прерывания - это прерывания по событиям на выводах микроконтроллера (восходящий или падающий фронты).
+* Все прерывания могут быть включены либо выключены  GLOBAL_INTERRUPT_DIS();  GLOBAL_INTERRUPT_EN(); EA = 1 (включено) , EA = 0 (выключено).
+* Контакты EINT0 по EINT12  принимают различные запросы на прерывания в зависимости от полярности регистра внешнего прерывания.
+* Каждый внешний источник прерывания имеет бит включения и выключения.  
+* Регистр флага внешнего прерывания (FLAG) предоставляет статус внешнего прерывания. 
+*     A96G166FR
+*   ------------
+*  |            |
+*  |            |
+*  |            |
+*  |        P1.0| --> LED D1 P13
+*  |        P1.1| --> LED D2 P12
+*  |        P1.2| --> LED D3 P11
+*  |        P1.3| --> LED D4 P10
+*  |            |
+*  |        P0.3| <-- Button A1 EINT1
+*  |        P2.1| <-- Button A2 EINT8
+*  |        P2.2| <-- Button A3 EINT9
+*  |            |
+*  |            |
+*
+* 
+*/
+#include "Intrins.h"
+#include "delay.h"
+#include "a96g166_gpio.h"
+#include "a96g166_clock.h"
+
+//---------------------------------------------------------------
+//External Interrupt Description EINT0...EINT4 --> INT5 Interrupt 
+//User’s manual page 58 (страница 58)
+void GPIO_Int_Handler(void) interrupt EINT04_VECT
+{
+  Port_SetOutputTogglepin(PORT1, PIN0);
+  Port_ClearInterruptStatus(EXTINT_CH1);
+}
+//---------------------------------------------------------------
+void Main(void)
+{
+  GLOBAL_INTERRUPT_DIS();       
+  Port_Initial();		        
+  Clock_Initial(HSI32_DIV16);//DIV16!!!        
+  GLOBAL_INTERRUPT_EN(); 
+  Port_SetOutputpin(PORT1, PIN0, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN1, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN2, PUSH_PULL);
+  Port_SetOutputpin(PORT1, PIN3, PUSH_PULL);
+  Port_SetOutputHighpin(PORT1, PIN0);
+  Port_SetOutputHighpin(PORT1, PIN1);
+  Port_SetOutputHighpin(PORT1, PIN2);
+  Port_SetOutputHighpin(PORT1, PIN3);
+  //Port_SetInputpin(PORT0, PIN3, NO_PULL);//P0.3
+  P0IO &= ~(1<<3);//SetInputpin
+  P0PU &= ~(1<<3);// NO_PULL
+  P0DB &= ~(1<<6);//Configure De-bounce Clock of Port fx/4096
+  P0DB |= (1<<1)|(1<<7);//De-bounce Enable
+  //Port_SetInputpin(PORT2, PIN1, NO_PULL);//P2.1
+  P2IO &= ~(1<<1);//SetInputpin
+  P2PU &= ~(1<<1);// NO_PULL
+  //Port_SetInputpin(PORT2, PIN2, NO_PULL);//P2.2
+  P2IO &= ~(1<<2);//SetInputpin
+  P2PU &= ~(1<<2);// NO_PULL	
+  P12DB|= (1<<5)|(1<<6);//De-bounce Enable
+	
+  Port_EnableInterrupt(EXTINT_CH1);
+  //Port_EnableInterrupt(EXTINT_CH8);
+  //Port_EnableInterrupt(EXTINT_CH9);
+  Port_ConfigureInterrupt(EXTINT_CH1, FALLING_EDGE);
+	
+  while(1)
+  {
+  
   }
 }
