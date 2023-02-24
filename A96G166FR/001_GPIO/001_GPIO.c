@@ -216,13 +216,37 @@ void Main(void)
 #include "a96g166_gpio.h"
 #include "a96g166_clock.h"
 
+bit status_1 = 0;
+u8 flag;
+
 //---------------------------------------------------------------
-//External Interrupt Description EINT0...EINT4 --> INT5 Interrupt 
+//External Interrupt Description EINT0,EINT1,EINT2,EINT3,EINT4 --> INT5 Interrupt 
 //User’s manual page 58 (страница 58)
-void GPIO_Int_Handler(void) interrupt EINT04_VECT
+void GPIO_Int_Handler(void) interrupt EINT04_VECT//5
 {
-  Port_SetOutputTogglepin(PORT1, PIN0);
+  status_1 = !status_1;
+  flag = status_1;
+  switch (flag){
+    case 0:
+    Port_SetOutputHighpin(PORT1, PIN0);
+    break;
+    case 1:
+    Port_SetOutputLowpin(PORT1, PIN0);
+  break;		
+}
   Port_ClearInterruptStatus(EXTINT_CH1);
+}
+//---------------------------------------------------------------
+//External Interrupt Description EINT7,EINT8,EINT9,EINTA --> INT17 Interrupt 
+//User’s manual page 58 (страница 58)
+void GPIO_Int_Handler1(void) interrupt EINT7A_VECT//17
+{
+  if( Port_GetInputpinValue(PORT2, PIN1))
+  Port_SetOutputTogglepin(PORT1, PIN1);
+  else 
+  Port_SetOutputTogglepin(PORT1, PIN3);
+  Port_ClearInterruptStatus(EXTINT_CH8);
+  Port_ClearInterruptStatus(EXTINT_CH9);	
 }
 //---------------------------------------------------------------
 void Main(void)
@@ -253,9 +277,11 @@ void Main(void)
   P12DB|= (1<<5)|(1<<6);//De-bounce Enable
 	
   Port_EnableInterrupt(EXTINT_CH1);
-  //Port_EnableInterrupt(EXTINT_CH8);
-  //Port_EnableInterrupt(EXTINT_CH9);
   Port_ConfigureInterrupt(EXTINT_CH1, FALLING_EDGE);
+  Port_EnableInterrupt(EXTINT_CH8);
+  Port_ConfigureInterrupt(EXTINT_CH8, FALLING_EDGE);
+  Port_EnableInterrupt(EXTINT_CH9);
+  Port_ConfigureInterrupt(EXTINT_CH9, FALLING_EDGE);
 	
   while(1)
   {
