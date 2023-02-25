@@ -216,44 +216,57 @@ void Main(void)
 #include "a96g166_gpio.h"
 #include "a96g166_clock.h"
 
-bit status_1 = 0;
-u8 flag;
+bit condition = TRUE;//1
+bit status_INT_P03 = FALSE;//0
+u8 flag_INT_P03;
+u8 INT_Enable = 0;
 
 //---------------------------------------------------------------
 //External Interrupt Description EINT0,EINT1,EINT2,EINT3,EINT4 --> INT5 Interrupt 
 //User’s manual page 58 (страница 58)
-void GPIO_Int_Handler(void) interrupt EINT04_VECT//5
+void GPIO_Int_Handler0(void) interrupt EINT04_VECT//5
 {
-  status_1 = !status_1;
-  flag = status_1;
-  switch (flag){
+   status_INT_P03 = !status_INT_P03;
+   flag_INT_P03 = status_INT_P03;
+   switch (flag_INT_P03){
     case 0:
-    Port_SetOutputHighpin(PORT1, PIN0);
+     Port_SetOutputHighpin(PORT1, PIN0);//Светодиоды подтянуты к плюсу питания! Р1.0 НЕГОРИТ!
+     condition = FALSE;//0
+     INT_Enable = 0;
     break;
     case 1:
-    Port_SetOutputLowpin(PORT1, PIN0);
-  break;		
+     Port_SetOutputLowpin(PORT1, PIN0);//P1.0 ГОРИТ!
+     condition = FALSE;//0
+     INT_Enable = 1;
+    break;
 }
   Port_ClearInterruptStatus(EXTINT_CH1);
 }
+
 //---------------------------------------------------------------
 //External Interrupt Description EINT7,EINT8,EINT9,EINTA --> INT17 Interrupt 
 //User’s manual page 58 (страница 58)
-void GPIO_Int_Handler1(void) interrupt EINT7A_VECT//17
+void GPIO_Int_Handler1(void) interrupt EINT7A_VECT
 {
-  if( Port_GetInputpinValue(PORT2, PIN1))
-  Port_SetOutputTogglepin(PORT1, PIN1);
-  else 
-  Port_SetOutputTogglepin(PORT1, PIN3);
-  Port_ClearInterruptStatus(EXTINT_CH8);
-  Port_ClearInterruptStatus(EXTINT_CH9);	
+   /*Кнопки по умолчанию подтянуты к плюсу питания. Это важный момент,
+    если его опустить то будет происходить то что не должно происходить)))*/
+   if(!Port_GetInputpinValue(PORT2, PIN1))//!<--
+    Port_SetOutputTogglepin(PORT1, PIN1);
+   else if(!Port_GetInputpinValue(PORT2, PIN2))//!<--
+    Port_SetOutputTogglepin(PORT1, PIN2);
+   Port_ClearInterruptStatus(EXTINT_CH8);
+   Port_ClearInterruptStatus(EXTINT_CH9);
 }
-//---------------------------------------------------------------
+
 void Main(void)
 {
+  // Disable INT. during peripheral setting
   GLOBAL_INTERRUPT_DIS();       
-  Port_Initial();		        
-  Clock_Initial(HSI32_DIV16);//DIV16!!!        
+  // Port intialize 
+  Port_Initial();        
+  // Clock 16Mhz initialize 
+  Clock_Initial(HSI32_DIV8);         
+  // Enable INT 
   GLOBAL_INTERRUPT_EN(); 
   Port_SetOutputpin(PORT1, PIN0, PUSH_PULL);
   Port_SetOutputpin(PORT1, PIN1, PUSH_PULL);
@@ -266,25 +279,41 @@ void Main(void)
   //Port_SetInputpin(PORT0, PIN3, NO_PULL);//P0.3
   P0IO &= ~(1<<3);//SetInputpin
   P0PU &= ~(1<<3);// NO_PULL
-  P0DB &= ~(1<<6);//Configure De-bounce Clock of Port fx/4096
-  P0DB |= (1<<1)|(1<<7);//De-bounce Enable
+  P0DB &= ~(1<<6);
+  P0DB |= (1<<1)|(1<<7);
   //Port_SetInputpin(PORT2, PIN1, NO_PULL);//P2.1
   P2IO &= ~(1<<1);//SetInputpin
   P2PU &= ~(1<<1);// NO_PULL
   //Port_SetInputpin(PORT2, PIN2, NO_PULL);//P2.2
   P2IO &= ~(1<<2);//SetInputpin
-  P2PU &= ~(1<<2);// NO_PULL	
-  P12DB|= (1<<5)|(1<<6);//De-bounce Enable
-	
-  Port_EnableInterrupt(EXTINT_CH1);
+  P2PU &= ~(1<<2);// NO_PULL
+
+  P12DB|= (1<<5)|(1<<6);
+
   Port_ConfigureInterrupt(EXTINT_CH1, FALLING_EDGE);
-  Port_EnableInterrupt(EXTINT_CH8);
-  Port_ConfigureInterrupt(EXTINT_CH8, FALLING_EDGE);
-  Port_EnableInterrupt(EXTINT_CH9);
-  Port_ConfigureInterrupt(EXTINT_CH9, FALLING_EDGE);
-	
+  Port_EnableInterrupt(EXTINT_CH1);
+
   while(1)
   {
-  
+    switch(INT_Enable){
+      case 0:
+       Port_EnableInterrupt(EXTINT_CH8);
+       Port_ConfigureInterrupt(EXTINT_CH8, FALLING_EDGE);
+       Port_EnableInterrupt(EXTINT_CH9);
+       Port_ConfigureInterrupt(EXTINT_CH9, FALLING_EDGE);
+       condition = TRUE;
+       break;
+      case 1:
+       Port_DisableInterrupt(EXTINT_CH8);
+       Port_DisableInterrupt(EXTINT_CH9);
+       Port_SetOutputHighpin(PORT1, PIN1);
+       Port_SetOutputHighpin(PORT1, PIN2);
+       condition = TRUE;
+       break;
   }
+   while(condition){
+     Port_SetOutputTogglepin(PORT1, PIN3);
+     Delay_ms(50);
+  }  
+ }
 }
