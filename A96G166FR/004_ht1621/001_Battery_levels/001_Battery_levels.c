@@ -133,7 +133,7 @@ void wrDATA(unsigned char Data, unsigned char cnt) {
   unsigned char i;
   for (i = 0; i < cnt; i++) {
   Port_SetOutputLowpin (PORT1, PIN1);//digitalWrite(_wr_p, LOW);
-  Delay(1);//delayMicroseconds(4);
+  Delay_us(4);//delayMicroseconds(4);
   if (Data & 0x80) {
     Port_SetOutputHighpin(PORT1, PIN2);//digitalWrite(_data_p, HIGH);
   }
@@ -141,7 +141,7 @@ void wrDATA(unsigned char Data, unsigned char cnt) {
     Port_SetOutputLowpin (PORT1, PIN2);//digitalWrite(_data_p, LOW);
   }
   Port_SetOutputHighpin(PORT1, PIN1);//digitalWrite(_wr_p, HIGH);
-  Delay(1);//delayMicroseconds(4);
+  Delay_us(4);//delayMicroseconds(4);
   Data <<= 1;
   }
 }
