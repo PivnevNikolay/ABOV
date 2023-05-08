@@ -15,7 +15,7 @@
 *  |        P1.2|------------->| DATA
 *  |        P1.3|------------->| LED+(EN)
 *  |            |              | Vcc --> +5V!!!
-*  |            |              | GND
+*  |        GND |<------------>| GND
 *
 * Код взят и адаптирован для A96G166FR отсюда.
 * LCD Arduino library https://github.com/valerionew/ht1621-7-seg
